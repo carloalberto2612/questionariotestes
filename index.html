@@ -1,0 +1,1360 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quiz Interativo — Testes de Software</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  background:#0f172a;
+  color:#e5e7eb
+}
+
+.container{
+  max-width:900px;
+  margin:0 auto;
+  padding:28px 18px 50px
+}
+
+.card{
+  background:#1e293b;
+  border:1px solid #334155;
+  border-radius:18px;
+  padding:26px;
+  box-shadow:0 12px 35px #0005
+}
+
+h1{
+  margin:0 0 8px;
+  font-size:28px
+}
+
+h2{
+  line-height:1.35
+}
+
+.muted{
+  color:#94a3b8
+}
+
+.top{
+  display:flex;
+  justify-content:space-between;
+  gap:15px;
+  align-items:center;
+  margin-bottom:18px;
+  flex-wrap:wrap
+}
+
+.stats{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap
+}
+
+.pill{
+  background:#0f172a;
+  border:1px solid #334155;
+  border-radius:999px;
+  padding:8px 12px;
+  font-weight:700
+}
+
+.timer{
+  color:#facc15
+}
+
+.timer.danger{
+  color:#f87171
+}
+
+.progress{
+  height:9px;
+  background:#334155;
+  border-radius:20px;
+  overflow:hidden;
+  margin:15px 0 25px
+}
+
+.bar{
+  height:100%;
+  width:0;
+  background:#22c55e;
+  transition:.25s
+}
+
+.option{
+  display:block;
+  width:100%;
+  text-align:left;
+  background:#0f172a;
+  color:#e5e7eb;
+  border:2px solid #334155;
+  padding:16px;
+  margin:10px 0;
+  border-radius:12px;
+  cursor:pointer;
+  font-size:16px;
+  transition:.15s
+}
+
+.option:hover{
+  border-color:#64748b;
+  transform:translateY(-1px)
+}
+
+.option.selected{
+  border-color:#60a5fa;
+  background:#172554
+}
+
+.option.correct{
+  border-color:#22c55e;
+  background:#052e16
+}
+
+.option.wrong{
+  border-color:#ef4444;
+  background:#450a0a
+}
+
+button.nav{
+  border:0;
+  border-radius:10px;
+  padding:12px 18px;
+  font-weight:700;
+  cursor:pointer;
+  background:#22c55e;
+  color:#052e16;
+  margin-top:14px
+}
+
+button.secondary{
+  background:#334155;
+  color:#fff;
+  margin-left:8px
+}
+
+.feedback{
+  margin-top:18px;
+  padding:14px;
+  border-radius:10px;
+  background:#0f172a;
+  line-height:1.5
+}
+
+.result{
+  text-align:center
+}
+
+.score{
+  font-size:52px;
+  font-weight:800;
+  margin:10px 0
+}
+
+.review{
+  text-align:left;
+  margin-top:25px
+}
+
+.review-item{
+  padding:15px;
+  border-bottom:1px solid #334155
+}
+
+.tag{
+  display:inline-block;
+  padding:4px 8px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:700;
+  margin-bottom:8px
+}
+
+.ok{
+  background:#14532d
+}
+
+.bad{
+  background:#7f1d1d
+}
+
+.setup{
+  display:flex;
+  gap:12px;
+  align-items:end;
+  flex-wrap:wrap;
+  margin-top:18px
+}
+
+label{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  color:#cbd5e1;
+  font-size:14px
+}
+
+select{
+  background:#0f172a;
+  color:#e5e7eb;
+  border:1px solid #475569;
+  border-radius:9px;
+  padding:11px
+}
+
+@media(max-width:600px){
+  .card{
+    padding:18px
+  }
+
+  h1{
+    font-size:23px
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <div class="card" id="app"></div>
+</div>
+
+<script>
+
+const questions = [
+
+{
+q:"O que caracteriza um bug S1 — Crítica?",
+a:[
+"O sistema ou uma função essencial fica indisponível.",
+"Um problema causa pouco impacto no uso do sistema.",
+"Uma funcionalidade possui uma alternativa simples.",
+"Um detalhe visual apresenta uma pequena inconsistência."
+],
+c:0,
+exp:"S1 é Crítica: o sistema ou uma função essencial fica indisponível, como quando nenhum usuário consegue fazer login."
+},
+
+{
+q:"O que caracteriza um bug S4 — Baixa?",
+a:[
+"Uma parte importante do sistema fica completamente indisponível.",
+"Um problema pequeno apresenta impacto limitado no sistema.",
+"Uma função essencial apresenta uma falha significativa.",
+"Uma falha provoca perda generalizada de informações."
+],
+c:1,
+exp:"S4 é Baixa: são problemas pequenos, geralmente visuais ou de pouco impacto."
+},
+
+{
+q:"Qual é um exemplo de Baixa Severidade + Alta Prioridade?",
+a:[
+"Um erro pequeno no nome da empresa antes de uma apresentação importante.",
+"Uma integração externa permanece indisponível durante um longo período.",
+"Uma ferramenta administrativa pouco utilizada apresenta uma falha.",
+"Uma função essencial impede os usuários de entrarem no sistema."
+],
+c:0,
+exp:"Pode ser baixa severidade porque o problema é pequeno, mas alta prioridade porque precisa ser corrigido rapidamente devido à situação, como antes de uma apresentação importante."
+},
+
+{
+q:"Qual é a diferença entre Verificação e Validação?",
+a:[
+"Verificação avalia usuários; Validação avalia somente o código.",
+"Verificação e Validação possuem o mesmo objetivo.",
+"Verificação: construir o produto corretamente; Validação: construir o produto certo.",
+"Verificação avalia desempenho; Validação avalia somente segurança."
+],
+c:2,
+exp:"Verificação pergunta se estamos construindo o produto corretamente, de acordo com requisitos e especificações. Validação pergunta se estamos construindo o produto certo para as necessidades do usuário."
+},
+
+{
+q:"Por que refatorar sem uma suíte de testes é mais arriscado?",
+a:[
+"Porque uma alteração pode quebrar uma função sem que isso seja percebido.",
+"Porque qualquer refatoração necessariamente causa falhas.",
+"Porque testes impedem alterações na estrutura do código.",
+"Porque código testado não precisa passar por refatorações."
+],
+c:0,
+exp:"Sem uma suíte de testes, uma refatoração pode quebrar uma funcionalidade sem que isso seja percebido. Com testes, é possível executar a suíte e identificar alterações que causaram falhas."
+},
+
+{
+q:"O que not.toBeVisible() verifica?",
+a:[
+"Que o código passou por uma refatoração.",
+"Que o elemento não está visível para o usuário.",
+"Que o elemento permanece sempre visível.",
+"Que a página terminou de carregar."
+],
+c:1,
+exp:"not.toBeVisible() verifica o contrário: espera-se que o elemento não esteja visível."
+},
+
+{
+q:"O que um teste de Confiabilidade verifica?",
+a:[
+"Se os elementos estão posicionados corretamente na tela.",
+"Se o código foi desenvolvido utilizando TypeScript.",
+"Se o usuário consegue realizar uma operação específica.",
+"Se o sistema funciona corretamente e de forma consistente."
+],
+c:3,
+exp:"Confiabilidade verifica se o sistema consegue funcionar corretamente e de forma consistente, inclusive após várias operações."
+},
+
+{
+q:"O que é o Playwright?",
+a:[
+"Uma ferramenta para testes automatizados de aplicações web, especialmente E2E.",
+"Uma biblioteca utilizada para definir estilos de páginas.",
+"Um sistema utilizado para armazenar dados da aplicação.",
+"Uma ferramenta destinada apenas a testes unitários."
+],
+c:0,
+exp:"Playwright é usado para testes automatizados de aplicações web, especialmente E2E. Ele testa a aplicação de forma mais completa, simulando um usuário no navegador."
+},
+
+{
+q:"O que significa dizer que componente e serviço estão acoplados?",
+a:[
+"Que os dois funcionam sem qualquer relação entre si.",
+"Que os dois precisam necessariamente estar no mesmo arquivo.",
+"Que o componente possui uma dependência forte em relação ao serviço.",
+"Que o serviço não pode ser utilizado durante os testes."
+],
+c:2,
+exp:"Acoplamento significa que o componente possui uma dependência forte em relação ao serviço. Quanto maior o acoplamento, mais difícil tende a ser isolar e testar o componente."
+},
+
+{
+q:"Quais são as três etapas fundamentais do processo de testes?",
+a:[
+"Análise, programação e publicação.",
+"Projeto, compilação e instalação.",
+"Verificação, codificação e deploy.",
+"Planejamento, execução e avaliação."
+],
+c:3,
+exp:"As três etapas são Planejamento → Execução → Avaliação. Primeiro define-se o que e como testar; depois os testes são realizados; por fim, os resultados são comparados com o esperado."
+},
+
+{
+q:"No Vitest, para que serve it?",
+a:[
+"Agrupar todos os testes relacionados ao projeto.",
+"Substituir uma API durante a execução do teste.",
+"Consultar elementos presentes na interface.",
+"Definir um comportamento específico que será testado."
+],
+c:3,
+exp:"it define um comportamento específico que será testado."
+},
+
+{
+q:"Para que serve userEvent?",
+a:[
+"Medir o desempenho do servidor durante os testes.",
+"Simular ações realizadas pelo usuário na interface.",
+"Gerar documentação automaticamente para o projeto.",
+"Testar exclusivamente variáveis internas do sistema."
+],
+c:1,
+exp:"userEvent simula ações realizadas pelo usuário, como clicar, digitar, preencher campos e interagir com a interface."
+},
+
+{
+q:"O que caracteriza a técnica de Caixa Branca?",
+a:[
+"Considerar a estrutura e a implementação interna do código.",
+"Executar testes concentrados apenas no desempenho.",
+"Realizar testes sem considerar o código da aplicação.",
+"Verificar somente aquilo que aparece para o usuário."
+],
+c:0,
+exp:"Na Caixa Branca, o teste considera a estrutura e a implementação interna do código. É comum entre desenvolvedores, especialmente em testes unitários."
+},
+
+{
+q:"O que representa a Severidade de um bug?",
+a:[
+"A quantidade de testes executados durante a avaliação.",
+"A urgência definida para corrigir o problema.",
+"O impacto que o bug causa no sistema.",
+"A quantidade de desenvolvedores envolvidos na correção."
+],
+c:2,
+exp:"Severidade representa o impacto que o bug causa no sistema."
+},
+
+{
+q:"O que são Edge Cases?",
+a:[
+"Situações relacionadas somente a erros de sintaxe.",
+"Casos que representam o funcionamento mais comum.",
+"Testes utilizados exclusivamente para avaliar desempenho.",
+"Situações nos limites ou fora do uso mais comum do sistema."
+],
+c:3,
+exp:"Edge Cases são situações nos limites ou fora do uso mais comum, como campo vazio, texto muito grande, valor no limite, um caractere acima do limite ou valor negativo quando não deveria ser permitido."
+},
+
+{
+q:"No Vitest, para que serve describe?",
+a:[
+"Verificar se o resultado obtido corresponde ao esperado.",
+"Executar uma interação com um elemento da interface.",
+"Agrupar testes relacionados dentro de um mesmo contexto.",
+"Renderizar diretamente um componente Angular."
+],
+c:2,
+exp:"describe organiza ou agrupa testes relacionados."
+},
+
+{
+q:"O que um teste de Desempenho verifica?",
+a:[
+"Velocidade, tempo de resposta e comportamento sob diferentes cargas.",
+"Apenas se existem erros de sintaxe no código.",
+"Somente a aparência visual da interface.",
+"Se uma determinada função de login está funcionando."
+],
+c:0,
+exp:"Desempenho envolve velocidade, tempo de resposta, capacidade de suportar usuários, consumo de recursos e comportamento sob carga. Uma função pode estar correta e ainda ser muito lenta."
+},
+
+{
+q:"O que representa a Prioridade de um bug?",
+a:[
+"O tempo necessário para executar uma funcionalidade.",
+"O impacto técnico provocado pelo problema.",
+"A urgência com que o bug deve ser corrigido.",
+"A quantidade de linhas de código afetadas."
+],
+c:2,
+exp:"Prioridade representa a urgência com que o bug deve ser corrigido."
+},
+
+{
+q:"Qual pergunta ajuda o QA a avaliar o impacto de um bug?",
+a:[
+"Quantos usuários são afetados pelo problema?",
+"Quantas linhas possui o arquivo relacionado?",
+"Qual editor de código foi utilizado no projeto?",
+"Qual linguagem de programação foi escolhida?"
+],
+c:0,
+exp:"Perguntas como quantos usuários são afetados, qual funcionalidade foi afetada, se o problema impede continuar e se há alternativa ajudam o QA a avaliar o impacto."
+},
+
+{
+q:"O que caracteriza um código sustentável?",
+a:[
+"Além de funcionar, é organizado, fácil de entender, modificar, testar e manter.",
+"Funciona corretamente mesmo quando sua estrutura é difícil de compreender.",
+"Concentra a maior parte da aplicação em poucos arquivos extensos.",
+"Funciona sem precisar considerar testes ou manutenção futura."
+],
+c:0,
+exp:"Código sustentável, além de funcionar, é organizado, fácil de entender, modificar, testar e manter."
+},
+
+{
+q:"Por que é mais barato encontrar um bug antes do lançamento?",
+a:[
+"Porque problemas encontrados antes do lançamento não afetam usuários em produção.",
+"Porque quanto mais tarde ele é descoberto, maior tende a ser o custo para corrigir, testar e disponibilizar uma nova versão.",
+"Porque bugs encontrados em produção não exigem novas versões do sistema.",
+"Porque testes só podem ser realizados antes do desenvolvimento."
+],
+c:1,
+exp:"Quanto mais tarde um bug é descoberto, maior tende a ser o custo para identificá-lo, corrigi-lo, testar novamente e disponibilizar uma nova versão."
+},
+
+{
+q:"O que é programação defensiva?",
+a:[
+"Desenvolver considerando situações inesperadas e entradas inválidas antes que causem problemas.",
+"Evitar validações para deixar o código mais simples.",
+"Utilizar try/catch em praticamente todas as partes do programa.",
+"Ignorar entradas inválidas e tratar somente os casos esperados."
+],
+c:0,
+exp:"Programação defensiva significa desenvolver considerando situações inesperadas e entradas inválidas antes que elas causem problemas."
+},
+
+{
+q:"Qual é um exemplo de Alta Severidade + Baixa Prioridade?",
+a:[
+"Um erro no nome da empresa poucas horas antes de uma apresentação.",
+"Um filtro possui uma alternativa manual para realizar a mesma busca.",
+"Um botão apresenta um pequeno desalinhamento visual.",
+"Uma ferramenta administrativa pouco utilizada deixa de funcionar completamente."
+],
+c:3,
+exp:"Pode ser alta severidade porque a função deixa de funcionar completamente, mas baixa prioridade porque é uma ferramenta secundária pouco utilizada e não necessária naquele momento."
+},
+
+{
+q:"Qual princípio orienta testes de comportamento?",
+a:[
+"Testar como o usuário utiliza o sistema, e não como o código foi implementado.",
+"Testar principalmente classes e métodos que não são acessíveis ao usuário.",
+"Evitar interações com a interface para reduzir a complexidade dos testes.",
+"Verificar somente variáveis internas utilizadas pela aplicação."
+],
+c:0,
+exp:"Testar comportamento significa verificar o que o usuário consegue fazer e observar, em vez de depender de detalhes internos da implementação."
+},
+
+{
+q:"O que um teste de Funcionalidade verifica?",
+a:[
+"Se uma função realiza aquilo que deveria.",
+"Se o código possui uma quantidade pequena de linhas.",
+"Se toda a documentação do projeto está completa.",
+"Se o sistema consegue suportar milhares de usuários."
+],
+c:0,
+exp:"Funcionalidade verifica se uma função realiza aquilo que deveria. Por exemplo, excluir deve remover a tarefa correta."
+},
+
+{
+q:"O que é um erro de regra de negócio?",
+a:[
+"Quando existe apenas um erro de sintaxe no código.",
+"Quando uma integração funciona conforme o comportamento esperado.",
+"Quando a implementação funciona tecnicamente, mas não segue uma regra definida para o negócio.",
+"Quando o usuário deixa um campo vazio durante o preenchimento."
+],
+c:2,
+exp:"Erro de regra de negócio ocorre quando a implementação funciona tecnicamente, mas não segue uma regra definida para o negócio."
+},
+
+{
+q:"O que caracteriza um bug S2 — Alta?",
+a:[
+"Um pequeno detalhe visual apresenta uma inconsistência.",
+"Uma funcionalidade importante apresenta problema significativo, mas o sistema ainda pode ser utilizado.",
+"Um problema possui pouco impacto na utilização do sistema.",
+"O sistema inteiro fica indisponível para os usuários."
+],
+c:1,
+exp:"S2 é Alta: uma funcionalidade importante tem um problema significativo, mas o sistema ainda pode ser utilizado."
+},
+
+{
+q:"O que é um Test Double?",
+a:[
+"Um teste executado duas vezes durante a mesma execução.",
+"Uma versão falsa ou substituta de uma dependência usada durante um teste.",
+"Uma cópia completa da aplicação utilizada em produção.",
+"Um segundo usuário criado para realizar testes simultâneos."
+],
+c:1,
+exp:"Test Double é uma versão falsa ou substituta de uma dependência. Ele pode deixar o teste mais rápido, previsível e isolado."
+},
+
+{
+q:"Na estrutura AAA, o que significa Act?",
+a:[
+"Preparar os dados necessários para o teste.",
+"Registrar informações sobre uma falha encontrada.",
+"Executar a ação que será testada.",
+"Confirmar se o resultado corresponde ao esperado."
+],
+c:2,
+exp:"Act significa executar a ação que será testada."
+},
+
+{
+q:"Quando faz sentido usar try/catch?",
+a:[
+"Para esconder erros e impedir que apareçam durante a execução.",
+"Para reduzir a quantidade de testes necessários.",
+"Para envolver praticamente todo o código, independentemente da necessidade.",
+"Em operações externas que podem falhar ou situações excepcionais que precisam de tratamento."
+],
+c:3,
+exp:"try/catch faz sentido para operações externas que podem falhar, como requisições de API, ou para situações excepcionais que precisam de tratamento específico. Usá-lo para esconder erros é uma má prática."
+},
+
+{
+q:"Para que serve screen?",
+a:[
+"Criar serviços utilizados pelo componente.",
+"Compilar o componente antes da execução do teste.",
+"Localizar elementos que aparecem na interface.",
+"Executar consultas diretamente no banco de dados."
+],
+c:2,
+exp:"screen permite localizar elementos que aparecem na interface e que o usuário pode encontrar."
+},
+
+{
+q:"O que a Angular Testing Library permite fazer?",
+a:[
+"Testar componentes próximos à interação real do usuário.",
+"Medir exclusivamente o consumo de memória da aplicação.",
+"Executar apenas testes relacionados a consultas SQL.",
+"Substituir o compilador utilizado pelo TypeScript."
+],
+c:0,
+exp:"A Angular Testing Library permite testar componentes próximos à interação real do usuário: renderizar, localizar elementos, clicar, preencher campos e verificar textos e comportamentos."
+},
+
+{
+q:"Qual é a diferença entre Stub e Mock?",
+a:[
+"Os dois termos representam exatamente a mesma técnica.",
+"Mock é utilizado somente para melhorar o desempenho dos testes.",
+"Stub verifica chamadas; Mock é utilizado apenas para fornecer dados.",
+"Stub fornece respostas pré-definidas; Mock ajuda a verificar se uma interação aconteceu."
+],
+c:3,
+exp:"Stub fornece respostas pré-definidas. Mock é usado principalmente para verificar se determinada interação aconteceu, como confirmar que salvar() foi chamado uma vez."
+},
+
+{
+q:"Por que testar redirecionamentos de rota?",
+a:[
+"Para verificar exclusivamente os elementos visuais da aplicação.",
+"Para aumentar a quantidade de código coberto pelos testes.",
+"Porque rotas não possuem relação com a experiência de navegação.",
+"Para garantir que o usuário consiga navegar corretamente entre as páginas."
+],
+c:3,
+exp:"Testar redirecionamentos garante a navegação correta. Sem isso, o usuário pode chegar a uma página inexistente, ficar preso, receber 404 ou não acessar a tela principal."
+},
+
+{
+q:"O que um teste de integração valida?",
+a:[
+"Somente uma variável utilizada por uma função.",
+"Apenas a aparência visual de uma determinada tela.",
+"Se diferentes partes do sistema funcionam corretamente juntas.",
+"Somente uma função executada de maneira isolada."
+],
+c:2,
+exp:"Teste de integração verifica se diferentes partes do sistema funcionam corretamente juntas, ao contrário do unitário, que testa uma unidade isoladamente."
+},
+
+{
+q:"Por que código legado costuma ser mais difícil de testar?",
+a:[
+"Porque sistemas antigos sempre apresentam desempenho inferior.",
+"Porque código legado necessariamente possui poucas funções.",
+"Pode não ter testes, ter documentação insuficiente, alto acoplamento e comportamentos antigos não documentados.",
+"Porque código desenvolvido recentemente não pode apresentar dificuldades de teste."
+],
+c:2,
+exp:"Código legado pode não ter testes, ter documentação insuficiente, dependências muito acopladas ou comportamentos antigos não documentados. Isso dificulta entender e testar o sistema."
+},
+
+{
+q:"Por que usar try/catch para esconder erros é uma má prática?",
+a:[
+"Porque try/catch não possui nenhuma função relacionada a exceções.",
+"Porque erros devem ser ignorados sempre que forem encontrados.",
+"Porque operações externas nunca apresentam falhas.",
+"Porque ele não deve simplesmente engolir o erro e fazer parecer que tudo está funcionando."
+],
+c:3,
+exp:"Usar try/catch para esconder erros é uma má prática porque ele não deve simplesmente engolir o erro e fazer parecer que tudo está funcionando."
+},
+
+{
+q:"Por que testes E2E são chamados de última linha de defesa antes da entrega?",
+a:[
+"Porque verificam apenas uma função isolada da aplicação.",
+"Porque são executados sem utilizar um navegador.",
+"Porque verificam várias partes do sistema juntas em um cenário próximo do uso real.",
+"Porque substituem todos os outros tipos de teste."
+],
+c:2,
+exp:"Testes E2E são uma última linha de defesa porque verificam várias partes do sistema funcionando juntas em um cenário próximo do uso real."
+},
+
+{
+q:"No Vitest, para que serve expect?",
+a:[
+"Simular uma interação realizada pelo usuário.",
+"Renderizar a aplicação no ambiente de testes.",
+"Criar ou configurar uma rota.",
+"Verificar se o resultado obtido é o esperado."
+],
+c:3,
+exp:"expect verifica se o resultado obtido é o esperado."
+},
+
+{
+q:"O que é um teste unitário?",
+a:[
+"Um teste que sempre executa toda a aplicação no navegador.",
+"Um teste criado exclusivamente para medir desempenho.",
+"Um teste realizado somente por usuários finais.",
+"Um teste que verifica uma pequena unidade de código de maneira isolada."
+],
+c:3,
+exp:"Teste unitário verifica uma pequena unidade de código, como uma função, método ou serviço, de maneira isolada."
+},
+
+{
+q:"O que é comportamento inesperado?",
+a:[
+"Qualquer ação válida realizada normalmente pelo usuário.",
+"Uma regra de negócio definida e documentada.",
+"Um teste unitário que foi aprovado.",
+"Uma situação que não foi prevista ou tratada adequadamente."
+],
+c:3,
+exp:"Comportamento inesperado é uma situação que não foi prevista ou tratada adequadamente, como uma integração externa retornar algo diferente do esperado."
+},
+
+{
+q:"O que é refatoração?",
+a:[
+"Modificar a estrutura interna do código sem alterar seu comportamento esperado.",
+"Adicionar obrigatoriamente novas funcionalidades ao sistema.",
+"Excluir os testes existentes antes de alterar o código.",
+"Alterar o resultado esperado de uma funcionalidade."
+],
+c:0,
+exp:"Refatoração modifica a estrutura interna do código sem alterar seu comportamento esperado."
+},
+
+{
+q:"Verificar se a função que adiciona uma tarefa salva o dado na estrutura interna é qual técnica?",
+a:[
+"Teste de desempenho.",
+"Caixa Preta.",
+"Caixa Branca.",
+"Teste de usabilidade."
+],
+c:2,
+exp:"Como o teste verifica uma estrutura interna do sistema, ele está considerando a implementação interna, portanto é Caixa Branca."
+},
+
+{
+q:"Na estrutura AAA, o que significa Arrange?",
+a:[
+"Confirmar se o resultado está correto.",
+"Executar a ação que será testada.",
+"Publicar os resultados do teste.",
+"Preparar os dados e condições necessárias."
+],
+c:3,
+exp:"Arrange significa preparar os dados e condições necessários para o teste."
+},
+
+{
+q:"Por que o isolamento é importante em testes unitários?",
+a:[
+"Porque torna o sistema mais lento durante a execução.",
+"Porque obriga o teste a utilizar todas as APIs reais.",
+"Porque facilita descobrir qual parte do código possui o problema quando o teste falha.",
+"Porque elimina a necessidade de executar outros tipos de teste."
+],
+c:2,
+exp:"O isolamento evita dependências desnecessárias. Assim, quando o teste falha, fica mais fácil descobrir qual parte do código tem o problema."
+},
+
+{
+q:"Por que uma exceção não é necessariamente um bug?",
+a:[
+"Porque uma situação excepcional pode ocorrer e ser tratada corretamente pelo sistema.",
+"Porque toda exceção é automaticamente considerada esperada.",
+"Porque bugs não podem acontecer quando o sistema está em produção.",
+"Porque exceções nunca interferem no fluxo de execução."
+],
+c:0,
+exp:"Uma exceção não é necessariamente um bug. Uma situação excepcional pode ocorrer e ser tratada corretamente pelo sistema."
+},
+
+{
+q:"Por que testes com Angular Testing Library tendem a resistir melhor a refatorações internas?",
+a:[
+"Porque depois de criados eles não precisam mais ser executados.",
+"Porque eles ignoram completamente o comportamento da interface.",
+"Porque normalmente verificam o comportamento observado pelo usuário, e não detalhes internos.",
+"Porque dependem diretamente de todas as variáveis internas do componente."
+],
+c:2,
+exp:"Como normalmente verifica o comportamento observado pelo usuário, o teste tende a continuar válido mesmo quando a forma interna de armazenar ou organizar os dados muda."
+},
+
+{
+q:"O que é um erro do usuário?",
+a:[
+"Quando o usuário fornece uma informação inválida ou realiza uma ação não permitida.",
+"Quando uma regra de negócio é seguida corretamente.",
+"Quando uma API externa retorna uma resposta inesperada.",
+"Quando o desenvolvedor implementa uma condição incorretamente."
+],
+c:0,
+exp:"Erro do usuário ocorre quando ele fornece uma informação inválida ou realiza uma ação não permitida; o sistema deve tratar a situação adequadamente."
+},
+
+{
+q:"Por que Severidade e Prioridade não são sinônimos?",
+a:[
+"Porque prioridade sempre é baixa quando a severidade é alta.",
+"Porque um problema pode ser grave mas não urgente, ou pouco grave mas urgente.",
+"Porque os dois termos possuem exatamente o mesmo significado.",
+"Porque severidade é um conceito utilizado apenas pelos usuários."
+],
+c:1,
+exp:"Severidade e prioridade medem coisas diferentes: um problema pode ser grave mas não urgente, ou pouco grave mas precisar de correção urgente."
+},
+
+{
+q:"O que é uma exceção?",
+a:[
+"Uma ocorrência durante a execução que interrompe ou altera o fluxo normal esperado.",
+"Sempre um bug causado por um erro de programação.",
+"Uma regra utilizada exclusivamente para definir o negócio.",
+"Um tipo de teste utilizado para avaliar a interface."
+],
+c:0,
+exp:"Exceção é uma ocorrência durante a execução que interrompe ou altera o fluxo normal esperado. Ela não é necessariamente bug porque pode ser tratada corretamente."
+},
+
+{
+q:"Por que testar Happy Path e Sad Path?",
+a:[
+"Porque é preciso garantir tanto o fluxo válido quanto o tratamento de situações problemáticas.",
+"Porque apenas o Sad Path é importante para avaliar uma aplicação.",
+"Porque apenas o Happy Path deve ser considerado nos testes.",
+"Porque os dois termos representam exatamente o mesmo tipo de cenário."
+],
+c:0,
+exp:"Happy Path testa o fluxo válido e esperado. Sad Path testa situações inválidas ou problemáticas. Testar só um deles deixa uma parte importante do comportamento sem garantia."
+},
+
+{
+q:"O que toBeVisible() verifica no Playwright?",
+a:[
+"Se um elemento foi removido da implementação.",
+"Se uma API externa está funcionando corretamente.",
+"Se uma variável possui valor verdadeiro.",
+"Se um elemento está visível para o usuário."
+],
+c:3,
+exp:"toBeVisible() verifica se um elemento está visível para o usuário."
+},
+
+{
+q:"O que caracteriza um bug S3 — Média?",
+a:[
+"O problema afeta uma funcionalidade, mas existe alternativa ou o impacto é limitado.",
+"Uma função essencial fica completamente indisponível.",
+"Nenhum usuário consegue realizar o login.",
+"Uma falha crítica impede o funcionamento geral do sistema."
+],
+c:0,
+exp:"S3 é Média: o problema afeta uma funcionalidade, mas existe uma alternativa ou o impacto é limitado."
+},
+
+{
+q:"O que é um teste de software? Qual é seu objetivo principal?",
+a:[
+"Verificar se o sistema funciona conforme o esperado e atende aos requisitos.",
+"Substituir a necessidade de documentação do projeto.",
+"Avaliar exclusivamente a velocidade de execução do sistema.",
+"Encontrar qualquer erro visual, independentemente dos requisitos."
+],
+c:0,
+exp:"O teste verifica se o sistema funciona conforme o esperado e atende aos requisitos definidos. Testar não é apenas procurar erros: também é verificar se o produto atende ao que foi planejado."
+},
+
+{
+q:"Na estrutura AAA, o que significa Assert?",
+a:[
+"Preparar o ambiente necessário para executar o teste.",
+"Executar a ação definida no cenário.",
+"Confirmar se o resultado obtido é o esperado.",
+"Instalar as dependências utilizadas pelo projeto."
+],
+c:2,
+exp:"Assert significa confirmar se o resultado é o esperado."
+},
+
+{
+q:"O que um teste de Usabilidade verifica?",
+a:[
+"Se o banco de dados possui índices adequados.",
+"Se o sistema é fácil e intuitivo para o usuário.",
+"Se a API permanece disponível durante toda a execução.",
+"Se cada método possui uma determinada estrutura de código."
+],
+c:1,
+exp:"Usabilidade verifica se o sistema é fácil e intuitivo para o usuário."
+},
+
+{
+q:"Para que serve render() na Angular Testing Library?",
+a:[
+"Verificar se o resultado de uma operação está correto.",
+"Renderizar o componente que será testado.",
+"Simular uma resposta de uma API externa.",
+"Criar propositalmente uma falha durante o teste."
+],
+c:1,
+exp:"render() coloca/renderiza o componente no ambiente de teste."
+},
+
+{
+q:"Qual é um erro de código?",
+a:[
+"Uma implementação incorreta que causa comportamento errado.",
+"Uma entrada inválida do usuário que foi tratada corretamente.",
+"Uma regra de negócio que está sendo seguida corretamente.",
+"Uma situação externa que foi tratada de maneira adequada."
+],
+c:0,
+exp:"Erro de código é causado por uma implementação incorreta, como uma condição escrita de forma errada que produz um cálculo incorreto."
+},
+
+{
+q:"O que caracteriza a técnica de Caixa Preta?",
+a:[
+"Testar exclusivamente informações armazenadas no banco.",
+"Verificar diretamente as estruturas internas utilizadas pelo código.",
+"Verificar o comportamento do sistema sem precisar conhecer sua implementação interna.",
+"Testar somente métodos que não são acessíveis externamente."
+],
+c:2,
+exp:"Na Caixa Preta, o testador verifica o comportamento do sistema sem precisar conhecer sua implementação interna. É comum em testes realizados por QA/testadores."
+},
+
+{
+q:"Qual opção apresenta os quatro elementos básicos de um plano de testes simples?",
+a:[
+"Somente código, banco, servidor e navegador.",
+"Login, senha, API e banco de dados.",
+"Prazo, orçamento, equipe e recursos financeiros.",
+"O que será testado; como será testado; quando/por quem; resultados esperados."
+],
+c:3,
+exp:"Um plano simples define o que será testado, como será testado, quando e por quem será testado e quais resultados são esperados."
+},
+
+{
+q:"Qual é a diferença entre testes funcionais e não funcionais?",
+a:[
+"Funcionais verificam o que o sistema faz; não funcionais verificam como ele funciona.",
+"Funcionais são sempre E2E; não funcionais são sempre unitários.",
+"Não existe diferença prática entre os dois tipos.",
+"Funcionais verificam aparência; não funcionais verificam apenas código."
+],
+c:0,
+exp:"Testes funcionais verificam o que o sistema faz. Testes não funcionais verificam como ele funciona, considerando desempenho, segurança, usabilidade e confiabilidade."
+}
+
+];
+
+let i=0;
+let score=0;
+let answers=[];
+let locked=false;
+let timerId=null;
+let seconds=30;
+let timePerQuestion=30;
+
+function renderSetup(){
+
+document.getElementById('app').innerHTML=`
+
+<h1>Quiz — Testes de Software</h1>
+
+<p class="muted">
+As perguntas e alternativas serão embaralhadas. 
+O tempo será contado separadamente em cada questão.
+</p>
+
+<div class="setup">
+
+<label>
+Tempo por questão
+
+<select id="timeSelect">
+<option value="15">15 segundos</option>
+<option value="30" selected>30 segundos</option>
+<option value="45">45 segundos</option>
+<option value="60">60 segundos</option>
+</select>
+
+</label>
+
+<button class="nav" onclick="startQuiz()">
+Começar quiz →
+</button>
+
+</div>
+
+`;
+
+}
+
+function startQuiz(){
+
+timePerQuestion=
+Number(document.getElementById('timeSelect').value);
+
+i=0;
+score=0;
+answers=[];
+
+render();
+
+}
+
+function render(){
+
+clearInterval(timerId);
+
+const q=questions[i];
+
+seconds=timePerQuestion;
+
+document.getElementById('app').innerHTML=`
+
+<div class="top">
+
+<div>
+
+<h1>Quiz — Testes de Software</h1>
+
+<div class="muted">
+Questão ${i+1} de ${questions.length}
+</div>
+
+</div>
+
+<div class="stats">
+
+<div class="pill">
+Acertos: ${score}
+</div>
+
+<div class="pill timer" id="timer">
+⏱ ${seconds}s
+</div>
+
+</div>
+
+</div>
+
+<div class="progress">
+
+<div
+class="bar"
+style="width:${(i/questions.length)*100}%">
+</div>
+
+</div>
+
+<h2>${escapeHtml(q.q)}</h2>
+
+<div id="opts">
+
+${q.a.map((x,n)=>`
+
+<button
+class="option"
+onclick="choose(${n})">
+
+<b>${String.fromCharCode(65+n)}.</b>
+${escapeHtml(x)}
+
+</button>
+
+`).join('')}
+
+</div>
+
+<div id="feedback"></div>
+
+<button
+class="nav"
+id="next"
+style="display:none"
+onclick="next()">
+
+${i===questions.length-1
+?'Ver resultado'
+:'Próxima questão'} →
+
+</button>
+
+`;
+
+locked=false;
+
+timerId=setInterval(tick,1000);
+
+}
+
+function tick(){
+
+if(locked)return;
+
+seconds--;
+
+const el=document.getElementById('timer');
+
+if(!el)return;
+
+el.textContent='⏱ '+seconds+'s';
+
+if(seconds<=10)
+el.classList.add('danger');
+
+if(seconds<=0){
+
+clearInterval(timerId);
+
+choose(-1);
+
+}
+
+}
+
+function choose(n){
+
+if(locked)return;
+
+locked=true;
+
+clearInterval(timerId);
+
+const q=questions[i];
+
+document
+.querySelectorAll('.option')
+.forEach((el,k)=>{
+
+if(k===q.c)
+el.classList.add('correct');
+
+if(k===n && n!==q.c)
+el.classList.add('wrong');
+
+});
+
+if(n===q.c){
+
+score++;
+
+answers[i]=true;
+
+document.getElementById('feedback').innerHTML=`
+
+<div class="feedback">
+
+✅ <b>Correto!</b>
+
+<br><br>
+
+<b>Por quê?</b>
+${escapeHtml(q.exp)}
+
+</div>
+
+`;
+
+}
+
+else if(n===-1){
+
+answers[i]=false;
+
+document.getElementById('feedback').innerHTML=`
+
+<div class="feedback">
+
+⏰ <b>Tempo esgotado!</b>
+
+<br>
+
+<b>Resposta correta:</b>
+${String.fromCharCode(65+q.c)}.
+${escapeHtml(q.a[q.c])}
+
+<br><br>
+
+<b>Por quê?</b>
+${escapeHtml(q.exp)}
+
+</div>
+
+`;
+
+}
+
+else{
+
+answers[i]=false;
+
+document.getElementById('feedback').innerHTML=`
+
+<div class="feedback">
+
+❌ <b>Incorreto.</b>
+
+<br>
+
+<b>Resposta correta:</b>
+${String.fromCharCode(65+q.c)}.
+${escapeHtml(q.a[q.c])}
+
+<br><br>
+
+<b>Por quê?</b>
+${escapeHtml(q.exp)}
+
+</div>
+
+`;
+
+}
+
+document.getElementById('next').style.display='inline-block';
+
+document
+.querySelector('.progress .bar')
+.style.width=((i+1)/questions.length*100)+'%';
+
+}
+
+function next(){
+
+if(i<questions.length-1){
+
+i++;
+
+render();
+
+}else{
+
+result();
+
+}
+
+}
+
+function result(){
+
+clearInterval(timerId);
+
+const pct=
+Math.round(score/questions.length*100);
+
+let review=
+questions.map((q,k)=>`
+
+<div class="review-item">
+
+<span class="tag ${answers[k]?'ok':'bad'}">
+
+${answers[k]?'ACERTO':'ERRO/TEMPO'}
+
+</span>
+
+<div>
+
+<b>
+${k+1}. ${escapeHtml(q.q)}
+</b>
+
+</div>
+
+${answers[k]
+?''
+:`
+
+<div
+class="muted"
+style="margin-top:7px">
+
+Resposta correta:
+${String.fromCharCode(65+q.c)}.
+${escapeHtml(q.a[q.c])}
+
+</div>
+
+`}
+
+</div>
+
+`).join('');
+
+document.getElementById('app').innerHTML=`
+
+<div class="result">
+
+<h1>Resultado</h1>
+
+<div class="score">
+${score}/${questions.length}
+</div>
+
+<div class="muted">
+${pct}% de aproveitamento
+</div>
+
+<button
+class="nav"
+onclick="renderSetup()">
+
+Refazer quiz
+
+</button>
+
+</div>
+
+<div class="review">
+
+<h2>Revisão</h2>
+
+${review}
+
+</div>
+
+`;
+
+}
+
+function escapeHtml(s){
+
+return s.replace(
+/[&<>"']/g,
+m=>({
+'&':'&amp;',
+'<':'&lt;',
+'>':'&gt;',
+'"':'&quot;',
+"'":'&#039;'
+}[m])
+);
+
+}
+
+renderSetup();
+
+</script>
+
+</body>
+</html>
